@@ -68,6 +68,18 @@ For horizontal scaling, migrate to Redis/PostgreSQL dedup keys.
    docker compose up -d --build
    ```
 
+## Common Permission Fix (SQLite)
+If logs show `sqlite3.OperationalError: unable to open database file`, your state mount is not writable by the non-root container user.
+
+Recommended host fix:
+```bash
+mkdir -p /srv/music/state
+chown -R 1000:1000 /srv/music/state
+chmod -R 775 /srv/music/state
+```
+
+Runtime behavior: if state path is not writable, the container now falls back to `/tmp/processed.sqlite3` and continues running, but state becomes ephemeral across restarts.
+
 ## Portainer Deployment
 1. Push repository to GitHub.
 2. Let GitHub Actions publish image to GHCR.
