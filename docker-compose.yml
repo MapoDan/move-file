@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  mp3-watcher:
+    image: ghcr.io/<your-org>/<your-repo>:latest
+    container_name: mp3-watcher
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      INPUT_DIR: /data/input
+      DIR_CLEAN: /data/clean
+      DIR_TAGGED: /data/tagged
+      PROCESSED_DB_PATH: /data/state/processed.sqlite3
+    volumes:
+      - /srv/music/input:/data/input
+      - /srv/music/clean:/data/clean
+      - /srv/music/tagged:/data/tagged
+      - /srv/music/state:/data/state
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
