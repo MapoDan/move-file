@@ -81,6 +81,13 @@ def wait_for_stable_size(path: Path, stable_seconds: int, poll_seconds: int) -> 
     return True
 
 
+def _iter_mp3_files(root: Path, recursive: bool):
+    pattern = "**/*.mp3" if recursive else "*.mp3"
+    for file_path in root.glob(pattern):
+        if file_path.is_file():
+            yield file_path
+
+
 class WatcherService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -97,6 +104,9 @@ class WatcherService:
             logger.info("watch registered", extra={"source_dir": watch_dir})
 
         self.observer.start()
+
+        if self.settings.startup_scan_enabled:
+            self._startup_scan(handler)
         try:
             while True:
                 time.sleep(1)
@@ -105,3 +115,11 @@ class WatcherService:
         finally:
             self.observer.stop()
             self.observer.join()
+
+    def _startup_scan(self, handler: Mp3EventHandler) -> None:
+        logger.info("startup scan begin")
+        for watch_dir in (self.settings.input_dir, self.settings.dir_clean, self.settings.dir_tagged):
+            root = Path(watch_dir)
+            for mp3_file in _iter_mp3_files(root, self.settings.recursive_watch):
+                handler._handle_candidate(mp3_file)
+        logger.info("startup scan completed")

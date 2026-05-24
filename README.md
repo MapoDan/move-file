@@ -6,6 +6,7 @@ Production-ready Dockerized Python service for self-hosted environments (Portain
 - Event-driven filesystem monitoring via `watchdog` (no polling loops).
 - Handler/plugin-style routing by source directory.
 - Debounce/stability checks (size must be stable before processing).
+- Startup bootstrap scan to process existing `.mp3` files already present at boot.
 - Retry + error isolation (single file failures do not crash the service).
 - Persistent processed state with SQLite.
 - JSON structured logs to stdout.
@@ -42,6 +43,8 @@ Production-ready Dockerized Python service for self-hosted environments (Portain
 ```
 
 ## Directory-to-Handler Mapping
+> Note: handlers are Python modules bundled in the image under `/app/app/scripts` (not inside your mounted `/data` paths).
+
 - `INPUT_DIR` -> `clean-tag-file.py` (`CleanTagFileHandler`): remove ID3 tags and move to `DIR_CLEAN`.
 - `DIR_CLEAN` -> `set-tag.py` (`SetTagHandler`): call remote OneTagger endpoint.
 - `DIR_TAGGED` -> `upload-file.py` (`UploadFileHandler`): upload to Nextcloud path `/[artist]/[album]/[track title].mp3`, then delete local file optionally.
@@ -93,6 +96,10 @@ Workflow: `.github/workflows/docker-publish.yml`
 - builds image with buildx cache
 - pushes to GHCR on branch/tag pushes
 - publishes tags: `latest`, branch tags, semver tags
+
+## Why Container Can Start But “Do Nothing”
+If files are copied **before** container startup, filesystem events are not emitted for those historical files.
+This service now performs a startup scan (config: `STARTUP_SCAN_ENABLED=true`) so pre-existing files are processed too.
 
 ## Extending with New Handlers
 1. Add a new class in `app/scripts/*.py` with `handle(file_path, settings)` and `name`.

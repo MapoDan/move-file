@@ -39,3 +39,5 @@ class Settings:
     nextcloud_password: str = os.getenv("NEXTCLOUD_PASSWORD", "")
     nextcloud_root: str = os.getenv("NEXTCLOUD_ROOT", "/Music")
     delete_after_upload: bool = _bool_env("DELETE_AFTER_UPLOAD", True)
+
+    startup_scan_enabled: bool = _bool_env("STARTUP_SCAN_ENABLED", True)
